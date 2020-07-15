@@ -7,28 +7,17 @@ const myVue = new YFVue({
             a: {
                 b: 1
             },
-            b:1
         }
     },
-    render(h) {
-        console.log('hhh', this)
-        return h('div', {}, [
-            h('h1', {}, this.a.b)
-        ])
-    },
-    created() {
-        console.log(this)
-        setInterval(() => {
-            const curDate = new Date().toString()
-            this.b = curDate
-            console.log(document.querySelector('h1').innerHTML, curDate)
-        }, 2000)
-    },
-    methods: {
-        count() {
-            this.a++
-        }
+    render() {
+        console.log('render', this)
+        return `hello ${this.data.a.b}`
     }
 })
-myVue.$mount('#app')
-console.log(myVue)
+console.log('---mount---')
+myVue.$mount()
+
+setInterval(() => {
+    myVue.data.a = new Date().toString()
+    console.log(myVue)
+}, 5000)
