@@ -9,16 +9,15 @@ const myVue: any = new YFVue({
     },
     render() {
         console.log('render', this)
-        return `hello ${this.data.a.b}`
+        return `hello ${this.a}`
     }
 })
 console.log('---mount---')
-//myVue.$mount()
+myVue.$mount('#app')
 
 myVue._data.a = new Date().toString()
 console.log(myVue)
 
-// setInterval(() => {
-//     myVue._data.a = new Date().toString()
-//     console.log(myVue)
-// }, 5000)
+setInterval(() => {
+    myVue.a = new Date().toString()
+}, 1000)
