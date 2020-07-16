@@ -1,7 +1,5 @@
 import YFVue from './YFVue/index'
-
-console.log(YFVue)
-const myVue = new YFVue({
+const myVue: any = new YFVue({
     data: function () {
         return {
             a: {
@@ -15,9 +13,12 @@ const myVue = new YFVue({
     }
 })
 console.log('---mount---')
-myVue.$mount()
+//myVue.$mount()
 
-setInterval(() => {
-    myVue.data.a = new Date().toString()
-    console.log(myVue)
-}, 5000)
+myVue._data.a = new Date().toString()
+console.log(myVue)
+
+// setInterval(() => {
+//     myVue._data.a = new Date().toString()
+//     console.log(myVue)
+// }, 5000)
