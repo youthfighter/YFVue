@@ -4,14 +4,19 @@ import { query } from './utils'
 
 export default class YFVue {
     $el: Element
+    $options: any
     _data: any
     _render: Function
 
-    constructor(options: any) {
+    constructor(options: any) {        
         this._render = options.render
         this._data = options.data()
+        this.$options = options
+        this.callHook('beforeCreate')
         this.initData()
+        this.initMethods()
         new Observer(this._data) as any
+        this.callHook('created')
     }
 
     $mount(el: string | Element) {
@@ -52,7 +57,21 @@ export default class YFVue {
             this.proxy(`_data`, key)
         }
     }
-
+    /**
+     * 将methods挂载到this上
+     */
+    initMethods() {
+        console.log('initMethods', this.$options.methods)
+        if (!this.$options.methods) return
+        for (let key in this.$options.methods) {
+            this[key] = this.$options.methods[key].bind(this)
+        } 
+    }
+    /**
+     * 代理到this上
+     * @param sourceKey 
+     * @param key 
+     */
     proxy(sourceKey: string, key: string) {
         Object.defineProperty(this, key, {
             enumerable: true,
@@ -64,5 +83,13 @@ export default class YFVue {
                 this[sourceKey][key] = val
             }
         })
+    }
+
+    /**
+     * 钩子函数调用
+     */
+    callHook(hook: string) {
+        const fun = this.$options[hook]
+        fun && fun.call(this)
     }
 }
