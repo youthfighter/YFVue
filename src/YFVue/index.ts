@@ -1,6 +1,8 @@
 import Watcher from './watcher'
 import Observer from './observer'
 import { query } from './utils'
+import VNode from './vnode'
+import { isArray } from 'util';
 
 export default class YFVue {
     $el: Element
@@ -8,7 +10,7 @@ export default class YFVue {
     _data: any
     _render: Function
 
-    constructor(options: any) {        
+    constructor(options: any) {
         this._render = options.render
         this._data = options.data()
         this.$options = options
@@ -28,23 +30,77 @@ export default class YFVue {
     /**
      * 渲染组件
      */
-    mountComponent (el: Element) {
+    mountComponent(el: Element) {
         const oldEl = this.$el
-        this.$el = el        
+        this.$el = el
         const parent = el.parentElement
         if (!oldEl) {
             parent.appendChild(this.$el)
         } else {
             parent.replaceChild(this.$el, oldEl)
-        }   
+        }
         new Watcher(this, this.update)
     }
     /**
      * 更新dom
      */
     update() {
-        let text = this._render()
-        this.$el.innerHTML = `<h2>${text}</h2>`
+        const vnode = this._render(this.createElement)
+        this.$el.innerHTML = ''     
+        this.createEle(vnode, this.$el)
+    }
+
+    /**
+     * vnode转dom
+     * @param vnode 
+     * @param parentElm 
+     */
+    createEle(vnode: VNode, parentElm: Element) {
+        let {tag, data = {}, children, text} = vnode
+        console.log('createEle', vnode)
+        let el
+        if (!tag) {
+            el = document.createTextNode(text)
+        } else {
+            el = document.createElement(vnode.tag)
+    
+            // set dom attributes
+            const attributes = data.attrs || {}
+            for (let key in attributes) {
+                el.setAttribute(key, attributes[key]);
+            }
+    
+            // set class
+            const classname = data.class
+            if (classname) {
+                el.setAttribute('class', classname);
+            }
+    
+            // set dom eventlistener
+            const events = data.on || {}
+            for (let key in events) {
+                el.addEventListener(key, events[key])
+            }
+        }
+
+        if (isArray(children) && children.length > 0) {
+            for(let subVNode of children) {
+                this.createEle(subVNode, el)
+            }
+        }
+        parentElm.appendChild(el)
+        return el
+
+    }
+
+    /**
+     * render转vnode
+     * @param tag 
+     * @param data 
+     * @param children 
+     */
+    createElement(tag: string, data: any, children: any, text: string): VNode {
+        return new VNode(tag, data, children, text)
     }
 
     /**
@@ -65,7 +121,7 @@ export default class YFVue {
         if (!this.$options.methods) return
         for (let key in this.$options.methods) {
             this[key] = this.$options.methods[key].bind(this)
-        } 
+        }
     }
     /**
      * 代理到this上

@@ -5,14 +5,17 @@ const myVue: any = new YFVue({
             a: {
                 b: 1
             },
+            b: ''
         }
     },
-    render() {
+    render(h) {
         console.log('render', this)
-        return `hello ${this.a}`
+        return h('p', { id: '123' }, [
+            h(undefined, undefined, undefined, this.b)
+        ])
     },
-    created(){
-        console.log('created',this)
+    created() {
+        console.log('created', this)
         this.helloWorld()
     },
     methods: {
@@ -27,6 +30,6 @@ myVue.$mount('#app')
 myVue._data.a = new Date().toString()
 console.log(myVue)
 
-// setInterval(() => {
-//     myVue.a = new Date().toString()
-// }, 1000)
+setInterval(() => {
+    myVue.b = new Date().toString()
+}, 1000)
