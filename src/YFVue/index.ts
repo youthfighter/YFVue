@@ -16,8 +16,9 @@ export default class YFVue {
         this.$options = options
         this.callHook('beforeCreate')
         this.initData()
-        this.initMethods()        
+        this.initMethods()
         new Observer(this._data) as any
+        this.initComputed()
         this.initWatch()
         this.callHook('created')
     }
@@ -29,7 +30,7 @@ export default class YFVue {
     }
 
     $watch(key: string, cb: Function) {
-        const watcher = new Watcher(this, key, cb)
+        new Watcher(this, key, cb)
     }
 
     /**
@@ -44,7 +45,7 @@ export default class YFVue {
         } else {
             parent.replaceChild(this.$el, oldEl)
         }
-        new Watcher(this, ()=>{
+        new Watcher(this, () => {
             this.update()
         })
     }
@@ -128,6 +129,25 @@ export default class YFVue {
         if (!this.$options.methods) return
         for (let key in this.$options.methods) {
             this[key] = this.$options.methods[key].bind(this)
+        }
+    }
+    /**
+     * 初始化计算属性
+     */
+    initComputed() {
+        const computed = this.$options.computed
+        if (!computed) return
+        new Observer(computed) as any
+        for (const key in computed) {
+            const fun = computed[key]
+            Object.defineProperty(this, key, {
+                enumerable: true,
+                configurable: true,
+                get() {
+                    return fun.call(this)
+                }
+            })
+            this.$watch(key, fun)
         }
     }
     /**

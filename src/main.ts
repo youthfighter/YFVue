@@ -3,24 +3,22 @@ const myVue: any = new YFVue({
     data: function () {
         return {
             a: {
-                b: 1
+                b: new Date().toString()
             },
-            b: ''
+            b: '',
+            firstName: 'zhang',
+            lastName: 'san'
         }
     },
     render(h) {
         console.log('render', this)
-        return h('p', { id: '123' }, [
-            h(undefined, undefined, undefined, this.a.b)
+        return h('p', { attrs: { id: 'abc' }, on: { click: this.resetTime } }, [
+            h(undefined, undefined, undefined, this.name)
         ])
     },
-    created() {
-        console.log('created', this)
-        this.helloWorld()
-    },
-    methods: {
-        helloWorld() {
-            console.log('hello')
+    computed: {
+        name() {
+            return this.firstName + this.lastName + '--' + this.a.b
         }
     },
     watch: {
@@ -30,14 +28,20 @@ const myVue: any = new YFVue({
         'a': function (oldVal: any, newVal: any) {
             console.log('--------watch a-------', oldVal, newVal)
         }
+    },
+    created() {
+        console.log('created', this)
+        this.helloWorld()
+    },
+    methods: {
+        helloWorld() {
+            console.log('hello')
+        },
+        resetTime() {
+            this.a.b = new Date().toString()
+            console.log('resetTime', document.querySelector('#abc'))
+        }
     }
 })
 console.log('---mount---')
 myVue.$mount('#app')
-
-//myVue._data.a = new Date().toString()
-console.log(myVue)
-
-setInterval(() => {
-    myVue.a.b = new Date().toString()
-}, 1000)

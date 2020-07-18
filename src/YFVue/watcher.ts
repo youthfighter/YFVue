@@ -14,7 +14,7 @@ export default class Watcher {
         this.cb = cb
         cb.call(vm)
         this.getter = typeof key === 'string' ? () => deepGet(vm, key) : key
-        this.value = this.getter()
+        this.value = this.getter.call(vm)
         Dep.target = null
     }
 
