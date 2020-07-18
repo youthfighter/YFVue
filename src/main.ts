@@ -22,12 +22,17 @@ const myVue: any = new YFVue({
         helloWorld() {
             console.log('hello')
         }
+    },
+    watch: {
+        b: function (oldVal: any, newVal: any) {
+            console.log('--------watch-------', oldVal, newVal)
+        }
     }
 })
 console.log('---mount---')
 myVue.$mount('#app')
 
-myVue._data.a = new Date().toString()
+//myVue._data.a = new Date().toString()
 console.log(myVue)
 
 setInterval(() => {

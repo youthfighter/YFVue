@@ -16,8 +16,9 @@ export default class YFVue {
         this.$options = options
         this.callHook('beforeCreate')
         this.initData()
-        this.initMethods()
+        this.initMethods()        
         new Observer(this._data) as any
+        this.initWatch()
         this.callHook('created')
     }
 
@@ -25,6 +26,10 @@ export default class YFVue {
         el = query(el)
         this.mountComponent(el)
         return this
+    }
+
+    $watch(key: string, cb: Function) {
+        const watcher = new Watcher(this, key, cb)
     }
 
     /**
@@ -39,14 +44,16 @@ export default class YFVue {
         } else {
             parent.replaceChild(this.$el, oldEl)
         }
-        new Watcher(this, this.update)
+        new Watcher(this, ()=>{
+            this.update()
+        })
     }
     /**
      * 更新dom
      */
     update() {
         const vnode = this._render(this.createElement)
-        this.$el.innerHTML = ''     
+        this.$el.innerHTML = ''
         this.createEle(vnode, this.$el)
     }
 
@@ -56,26 +63,26 @@ export default class YFVue {
      * @param parentElm 
      */
     createEle(vnode: VNode, parentElm: Element) {
-        let {tag, data = {}, children, text} = vnode
+        let { tag, data = {}, children, text } = vnode
         console.log('createEle', vnode)
         let el
         if (!tag) {
             el = document.createTextNode(text)
         } else {
             el = document.createElement(vnode.tag)
-    
+
             // set dom attributes
             const attributes = data.attrs || {}
             for (let key in attributes) {
                 el.setAttribute(key, attributes[key]);
             }
-    
+
             // set class
             const classname = data.class
             if (classname) {
                 el.setAttribute('class', classname);
             }
-    
+
             // set dom eventlistener
             const events = data.on || {}
             for (let key in events) {
@@ -84,7 +91,7 @@ export default class YFVue {
         }
 
         if (isArray(children) && children.length > 0) {
-            for(let subVNode of children) {
+            for (let subVNode of children) {
                 this.createEle(subVNode, el)
             }
         }
@@ -121,6 +128,16 @@ export default class YFVue {
         if (!this.$options.methods) return
         for (let key in this.$options.methods) {
             this[key] = this.$options.methods[key].bind(this)
+        }
+    }
+    /**
+     * 初始化watch
+     */
+    initWatch() {
+        let watch = this.$options.watch
+        if (!watch) return
+        for (const key in watch) {
+            this.$watch(key, watch[key])
         }
     }
     /**

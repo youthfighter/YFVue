@@ -3,12 +3,17 @@ import Dep from './dep'
 export default class Watcher {
     private vm: any
     private cb: Function
+    value: any
+    private key: string | Function
+    getter: Function
 
-    constructor(vm: any, cb: Function) {
+    constructor(vm: any, key: string | Function, cb: Function = () => { }) {
         Dep.target = this
         this.vm = vm
         this.cb = cb
         cb.call(vm)
+        this.getter = typeof key === 'string' ? () => vm[key] : key
+        this.value = this.getter()
         Dep.target = null
     }
 
@@ -17,6 +22,8 @@ export default class Watcher {
     }
 
     update() {
-        this.cb.call(this.vm)
+        const oldValue = this.value
+        this.value = this.getter()
+        this.cb.call(this.vm, this.value, oldValue)
     }
 }
