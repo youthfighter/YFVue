@@ -1,3 +1,4 @@
+const deepGet = require('lodash.get');
 import Dep from './dep'
 
 export default class Watcher {
@@ -12,7 +13,7 @@ export default class Watcher {
         this.vm = vm
         this.cb = cb
         cb.call(vm)
-        this.getter = typeof key === 'string' ? () => vm[key] : key
+        this.getter = typeof key === 'string' ? () => deepGet(vm, key) : key
         this.value = this.getter()
         Dep.target = null
     }

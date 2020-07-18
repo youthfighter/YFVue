@@ -11,7 +11,7 @@ const myVue: any = new YFVue({
     render(h) {
         console.log('render', this)
         return h('p', { id: '123' }, [
-            h(undefined, undefined, undefined, this.b)
+            h(undefined, undefined, undefined, this.a.b)
         ])
     },
     created() {
@@ -24,8 +24,11 @@ const myVue: any = new YFVue({
         }
     },
     watch: {
-        b: function (oldVal: any, newVal: any) {
-            console.log('--------watch-------', oldVal, newVal)
+        'a.b': function (oldVal: any, newVal: any) {
+            console.log('--------watch a.b-------', oldVal, newVal)
+        },
+        'a': function (oldVal: any, newVal: any) {
+            console.log('--------watch a-------', oldVal, newVal)
         }
     }
 })
@@ -36,5 +39,5 @@ myVue.$mount('#app')
 console.log(myVue)
 
 setInterval(() => {
-    myVue.b = new Date().toString()
+    myVue.a.b = new Date().toString()
 }, 1000)
