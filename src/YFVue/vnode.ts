@@ -3,10 +3,13 @@ export default class VNode {
     data: any
     children: Array<VNode>
     text: string
-    constructor(tag: string, data: any, children:Array<VNode>, text?: string) {
+    key: any
+    elm: any
+    constructor(tag: string, data: any, children: Array<VNode>, text?: string, key?: any) {
         this.tag = tag
         this.data = data
         this.children = children
         this.text = text
+        this.key = key
     }
 }

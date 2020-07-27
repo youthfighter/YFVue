@@ -3,12 +3,16 @@ import Observer from './observer'
 import { query } from './utils'
 import VNode from './vnode'
 import { isArray } from 'util';
+/**
+ * 1. 缺少方法的卸载
+ */
 
 export default class YFVue {
     $el: Element
     $options: any
     _data: any
     _render: Function
+    _events: any = {}
 
     constructor(options: any) {
         this._render = options.render
@@ -22,15 +26,132 @@ export default class YFVue {
         this.initWatch()
         this.callHook('created')
     }
-
+    /**
+     * 挂载
+     * @param el 
+     */
     $mount(el: string | Element) {
         el = query(el)
         this.mountComponent(el)
         return this
     }
 
+    /**
+     * 销毁
+     */
+    $deatory(event: string, fn?: Function) {
+        this.callHook('beforeDestroy')
+    }
+
+    /**
+     * 方法安装
+     */
+    $on() {
+
+    }
+
+    /**
+     * 方法的卸载
+     */
+    $off() {
+
+    }
+
     $watch(key: string, cb: Function) {
         new Watcher(this, key, cb)
+    }
+
+    patch(oldVnode: VNode, vnode: VNode) {
+        if (this.sameVnode(oldVnode, vnode)) {
+            // 相似节点打补丁（尽量服用dom节点）
+            vnode.elm = this.patchVnode(oldVnode, vnode)
+        } else {
+            // 不相似就整个覆盖
+            let elm = oldVnode.elm
+            let parent = elm.parentElement
+            // 插入新节点
+            this.createElm(vnode, parent)
+            // 删除老节点
+            if (parent) {
+                this.removeVnode(oldVnode, parent)
+            }
+
+        }
+        return vnode.elm
+    }
+
+    /**
+     * 更新当前vnode对应的dom
+     */
+    patchVnode(oldVnode: VNode, vnode: VNode) {
+        // 新旧node相等 直接返回
+        if (oldVnode === vnode) return
+        // 新节点的dom指向老节点
+        let elm = vnode.elm = oldVnode.elm
+        const oldChildren = oldVnode.children
+        const children = vnode.children
+
+        // 更新相关属性
+        if (vnode.data) {
+            this.updateAttrs(oldVnode, vnode)
+        }
+        // 如果是文本节点，肯定没有children属性
+        if (vnode.text) {
+            if (vnode.text !== oldVnode.text) elm.textContent = vnode.text
+        } else {
+            // 新节点不是文本节点，判断老节点是否为文本节点，清空对应的值
+            if (oldVnode.text) {
+                elm.textContent = ''
+            }
+            // 新老children都存在 更新children
+            if (oldChildren && children) {
+                this.updateChildren()
+            } else if (children) {
+                // 将新children（vnode[]）插入到dom中
+                // oldChildren不存在，原来可能是文本节点 需要清空text
+
+                this.addVnodes()
+            } else if (oldChildren) {
+                // 将老的children（vnode[]）从dom中删除
+                this.removeVnodes()
+            }
+        }
+    }
+
+    addVnodes() {
+
+    }
+    removeVnodes() {
+
+    }
+
+    updateChildren() {
+
+    }
+
+    /**
+     * 更新属性
+     */
+    updateAttrs(oldVnode: VNode, vnode: VNode) {
+        let elm = vnode.elm
+        let oldAttrs = oldVnode.data.attrs || {}
+        let attrs = vnode.data.attrs || {}
+
+        for (let key in attrs) {
+            if (attrs[key] !== oldAttrs[key]) {
+                elm.setAttribute(key, attrs[key])
+            }
+        }
+
+        for (let key in oldAttrs) {
+            if (!attrs[key]) {
+                elm.removeAttribute(key)
+            }
+        }
+    }
+
+    sameVnode(a: VNode, b: VNode) {
+        return a.key === b.key && a.tag === b.tag
     }
 
     /**
@@ -55,7 +176,7 @@ export default class YFVue {
     update() {
         const vnode = this._render(this.createElement)
         this.$el.innerHTML = ''
-        this.createEle(vnode, this.$el)
+        this.createElm(vnode, this.$el)
     }
 
     /**
@@ -63,9 +184,8 @@ export default class YFVue {
      * @param vnode 
      * @param parentElm 
      */
-    createEle(vnode: VNode, parentElm: Element) {
+    createElm(vnode: VNode, parentElm: Element) {
         let { tag, data = {}, children, text } = vnode
-        console.log('createEle', vnode)
         let el
         if (!tag) {
             el = document.createTextNode(text)
@@ -88,17 +208,26 @@ export default class YFVue {
             const events = data.on || {}
             for (let key in events) {
                 el.addEventListener(key, events[key])
+                if (this._events[key]) {
+                    this._events[key].push(events[key])
+                } else {
+                    this._events[key] = [events[key]]
+                }
             }
         }
 
         if (isArray(children) && children.length > 0) {
             for (let subVNode of children) {
-                this.createEle(subVNode, el)
+                this.createElm(subVNode, el)
             }
         }
         parentElm.appendChild(el)
         return el
 
+    }
+
+    removeVnode(vnode: VNode, parent: Element) {
+        parent.removeChild(vnode.elm)
     }
 
     /**
