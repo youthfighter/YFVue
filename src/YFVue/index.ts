@@ -72,10 +72,7 @@ export default class YFVue {
             // 插入新节点
             this.createElm(vnode, parent)
             // 删除老节点
-            if (parent) {
-                this.removeVnode(oldVnode, parent)
-            }
-
+            this.removeVnode(oldVnode)
         }
         return vnode.elm
     }
@@ -105,28 +102,45 @@ export default class YFVue {
             }
             // 新老children都存在 更新children
             if (oldChildren && children) {
-                this.updateChildren()
+                this.updateChildren(elm, oldChildren, children)
             } else if (children) {
                 // 将新children（vnode[]）插入到dom中
                 // oldChildren不存在，原来可能是文本节点 需要清空text
-
-                this.addVnodes()
+                this.addVnodes(elm, children)
             } else if (oldChildren) {
                 // 将老的children（vnode[]）从dom中删除
-                this.removeVnodes()
+                this.removeVnodes(oldChildren)
             }
         }
     }
 
-    addVnodes() {
+    addVnodes(elm: Element, vnodes: Array<VNode>) {
+        for (let vnode of vnodes) {
+            this.createElm(vnode, elm)
+        }
+    }
+
+    /**
+     *  批量删除节点
+     */
+    removeVnodes(vnodes: Array<VNode>) {
+        for (let vnode of vnodes) {
+            this.removeVnode(vnode)
+        }
+    }
+
+    updateChildren(elm: Element, oldChildren: Array<VNode>, children: Array<VNode>) {
 
     }
-    removeVnodes() {
 
-    }
-
-    updateChildren() {
-
+    /**
+     * 删除节点
+     */
+    removeVnode(vnode: VNode) {
+        let elm = vnode.elm
+        if (elm.parentElement) {
+            elm.parentElement.removeChild(elm)
+        }
     }
 
     /**
@@ -224,10 +238,6 @@ export default class YFVue {
         parentElm.appendChild(el)
         return el
 
-    }
-
-    removeVnode(vnode: VNode, parent: Element) {
-        parent.removeChild(vnode.elm)
     }
 
     /**
