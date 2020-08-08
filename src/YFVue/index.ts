@@ -13,6 +13,7 @@ export default class YFVue {
     _data: any
     _render: Function
     _events: any = {}
+    vnode: VNode = null
 
     constructor(options: any) {
         this._render = options.render
@@ -63,17 +64,17 @@ export default class YFVue {
 
     patch(oldVnode: VNode, vnode: VNode) {
         if (this.sameVnode(oldVnode, vnode)) {
-            // 相似节点打补丁（尽量服用dom节点）
+            // 相似节点打补丁（尽量复用dom节点）
             vnode.elm = this.patchVnode(oldVnode, vnode)
         } else {
             // 不相似就整个覆盖
-            let elm = oldVnode.elm
-            let parent = elm.parentElement
+            let parent = oldVnode && oldVnode.elm ? oldVnode.elm.parentElement : this.$el
             // 插入新节点
-            this.createElm(vnode, parent)
+            vnode.elm = this.createElm(vnode, parent)
             // 删除老节点
-            this.removeVnode(oldVnode)
+            oldVnode && this.removeVnode(oldVnode)
         }
+        this.vnode = vnode
         return vnode.elm
     }
 
@@ -112,6 +113,7 @@ export default class YFVue {
                 this.removeVnodes(oldChildren)
             }
         }
+        return vnode.elm
     }
 
     addVnodes(elm: Element, vnodes: Array<VNode>) {
@@ -130,7 +132,7 @@ export default class YFVue {
     }
 
     updateChildren(elm: Element, oldChildren: Array<VNode>, children: Array<VNode>) {
-
+        console.log('updateChildren')
     }
 
     /**
@@ -165,7 +167,7 @@ export default class YFVue {
     }
 
     sameVnode(a: VNode, b: VNode) {
-        return a.key === b.key && a.tag === b.tag
+        return a && b && a.key === b.key && a.tag === b.tag
     }
 
     /**
@@ -180,6 +182,8 @@ export default class YFVue {
         } else {
             parent.replaceChild(this.$el, oldEl)
         }
+        // const vnode = this._render(this.createElement)
+        // this.createElm(vnode, this.$el)
         new Watcher(this, () => {
             this.update()
         })
@@ -189,8 +193,9 @@ export default class YFVue {
      */
     update() {
         const vnode = this._render(this.createElement)
-        this.$el.innerHTML = ''
-        this.createElm(vnode, this.$el)
+        // this.$el.innerHTML = ''
+        // this.createElm(vnode, this.$el)
+        this.patch(this.vnode, vnode)
     }
 
     /**

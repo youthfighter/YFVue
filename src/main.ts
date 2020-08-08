@@ -12,9 +12,11 @@ const myVue: any = new YFVue({
     },
     render(h) {
         console.log('render', this)
-        return h('p', { attrs: { id: 'abc' }, on: { click: this.resetTime } }, [
-            h(undefined, undefined, undefined, this.name)
-        ])
+        // return h('p', { attrs: { id: 'abc' }, on: { click: this.resetTime } }, [
+        //     h(undefined, undefined, undefined, this.name)
+        // ])
+        return h(undefined, undefined, undefined, this.name)
+
     },
     computed: {
         name() {
@@ -32,6 +34,7 @@ const myVue: any = new YFVue({
     created() {
         console.log('created', this)
         this.helloWorld()
+        setInterval(this.resetTime, 10000)
     },
     methods: {
         helloWorld() {
