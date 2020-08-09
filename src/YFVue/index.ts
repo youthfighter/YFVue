@@ -2,7 +2,7 @@ import Watcher from './watcher'
 import Observer from './observer'
 import { query } from './utils'
 import VNode from './vnode'
-import { isArray } from 'util';
+
 /**
  * 1. 缺少方法的卸载
  */
@@ -65,12 +65,12 @@ export default class YFVue {
     patch(oldVnode: VNode, vnode: VNode) {
         if (this.sameVnode(oldVnode, vnode)) {
             // 相似节点打补丁（尽量复用dom节点）
-            vnode.elm = this.patchVnode(oldVnode, vnode)
+            this.patchVnode(oldVnode, vnode)
         } else {
             // 不相似就整个覆盖
             let parent = oldVnode && oldVnode.elm ? oldVnode.elm.parentElement : this.$el
             // 插入新节点
-            vnode.elm = this.createElm(vnode, parent)
+            this.createElm(vnode, parent)
             // 删除老节点
             oldVnode && this.removeVnode(oldVnode)
         }
@@ -116,9 +116,9 @@ export default class YFVue {
         return vnode.elm
     }
 
-    addVnodes(elm: Element, vnodes: Array<VNode>) {
+    addVnodes(elm: Element, vnodes: Array<VNode>, refElm?: Element) {
         for (let vnode of vnodes) {
-            this.createElm(vnode, elm)
+            this.createElm(vnode, elm, refElm)
         }
     }
 
@@ -131,8 +131,83 @@ export default class YFVue {
         }
     }
 
-    updateChildren(elm: Element, oldChildren: Array<VNode>, children: Array<VNode>) {
-        console.log('updateChildren')
+    updateChildren(parentElm: Element, oldChildren: Array<VNode>, newChildren: Array<VNode>) {
+        let oldStartIdx = 0 // 旧(前)
+        let oldEndIdx = oldChildren.length - 1 // 旧(后)
+        let newStartIdx = 0 // 新(前)   
+        let newEndIdx = newChildren.length - 1 // 新(后)
+        // 新(前)-旧(前)、新(后)-旧(后)、新(后)-旧(前)、新(前)-旧(后)
+        while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
+            let oldStartVNode = oldChildren[oldStartIdx]
+            let newStartVNode = newChildren[newStartIdx]
+            let oldEndVNode = oldChildren[oldEndIdx]
+            let newEndVnode = newChildren[newEndIdx]
+            if (this.sameVnode(oldStartVNode, newStartVNode)) {
+                // 新(前)-旧(前)
+                this.patchVnode(oldStartVNode, newStartVNode)
+                oldStartIdx++
+                newStartIdx++
+            } else if (this.sameVnode(oldEndVNode, newEndVnode)) {
+                // 新(后)-旧(后)
+                this.patchVnode(oldEndVNode, newEndVnode)
+                oldEndIdx--
+                newEndIdx--
+            } else if (this.sameVnode(oldStartVNode, newEndVnode)) {
+                //新(后)-旧(前)
+                this.patchVnode(oldStartVNode, newEndVnode)
+                if (oldEndVNode.elm.nextSibling) {
+                    parentElm.insertBefore(oldStartVNode.elm, oldEndVNode.elm.nextSibling())
+                } else {
+                    parentElm.appendChild(oldEndVNode.elm)
+                }
+                oldStartIdx++
+                newEndIdx--
+            } else if (this.sameVnode(oldEndVNode, newStartVNode)) {
+                // 新(前)-旧(后)
+                this.patchVnode(oldStartVNode, newEndVnode)
+                parentElm.insertBefore(oldEndVNode.elm, oldStartVNode.elm)
+                oldEndIdx--
+                newStartIdx++
+            } else {
+                let idx = this.findIdxInOld(newStartVNode, oldChildren, oldStartIdx + 1, oldEndIdx - 1)
+                if (idx > -1) {
+                    // 存在该节点
+                    this.patch(oldChildren[idx], newStartVNode)
+                    oldChildren[idx] = null // 避免被其他节点再次找到
+                } else {
+                    // 没有找到节点
+                    this.createElm(newStartVNode, parentElm)
+                }
+                newStartIdx++
+            }
+        }
+
+        if (oldStartIdx > oldEndIdx) {
+            // oldChildren先循环完毕，newchildren中未循环的都需要插入
+            this.addVnodes(parentElm,
+                newChildren.filter((ele, idx) => idx >= newStartIdx && idx <= newEndIdx),
+                newChildren[newEndIdx + 1] ? newChildren[newEndIdx + 1].elm : null)
+        } else {
+            // newchildren先循环完毕，oldChildren未循环的节点删除
+            this.removeVnodes(oldChildren.filter((ele, idx) => idx >= oldStartIdx && idx <= oldEndIdx))
+        }
+    }
+
+    /**
+     * 在制定范围的旧节点中找节点
+     * @param newStartVnode 
+     * @param oldCh 
+     * @param oldStartIdx 
+     * @param oldEndIdx 
+     */
+    findIdxInOld(newStartVnode: VNode, oldCh: Array<VNode>, oldStartIdx: number, oldEndIdx: number) {
+        let result = -1
+        for (let i = oldStartIdx; i <= oldEndIdx; i++) {
+            if (this.sameVnode(oldCh[i], newStartVnode)) {
+                result = i
+            }
+        }
+        return result
     }
 
     /**
@@ -203,7 +278,7 @@ export default class YFVue {
      * @param vnode 
      * @param parentElm 
      */
-    createElm(vnode: VNode, parentElm: Element) {
+    createElm(vnode: VNode, parentElm: Element, refElm?: Element) {
         let { tag, data = {}, children, text } = vnode
         let el
         if (!tag) {
@@ -235,12 +310,17 @@ export default class YFVue {
             }
         }
 
-        if (isArray(children) && children.length > 0) {
+        if (Array.isArray(children) && children.length > 0) {
             for (let subVNode of children) {
                 this.createElm(subVNode, el)
             }
         }
-        parentElm.appendChild(el)
+        if (refElm) {
+            parentElm.insertBefore(el, refElm)
+        } else {
+            parentElm.appendChild(el)
+        }
+        vnode.elm = el
         return el
 
     }
