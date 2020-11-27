@@ -1,7 +1,7 @@
 const path = require('path')
 
 module.exports = {
-    entry: path.resolve(__dirname, 'src/main'),
+    entry: path.resolve(__dirname, 'example/main'),
     output: {
         path: path.resolve(__dirname, 'dist'),
         library: 'umd'
