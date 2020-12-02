@@ -1,11 +1,35 @@
-import { IComponent } from './interface/index';
+import { IComponent, IVNode } from './interface/index';
 import Dep from './dep';
+import Watcher from './watcher';
 export default function YFVue(options: any = {}) {
     const vm: IComponent = this
     vm.$options = options
     vm._self = vm
 
     initState(vm)
+
+    // 挂载节点
+    vm.$mount(vm.$options.el)
+}
+
+YFVue.prototype.$mount = function (el: string) {
+    return mountComponent(this, document.querySelector(el))
+}
+
+YFVue.prototype._render = function (vnode: IVNode) {
+    const vm: IComponent = this
+    const { render } = vm.$options
+    render.call(vm)
+}
+
+function mountComponent(vm: IComponent, el: Element) {
+    new Watcher(vm, ()=>{
+        vm._update(vm._render())
+    })
+}
+
+function createElement(tag: string, data: any, children: any) {
+    
 }
 
 function initState(vm: IComponent) {
@@ -42,9 +66,9 @@ class Observer {
         this.value = value;
         this.walk(value)
     }
-    walk(obj:Object) {
+    walk(obj: Object) {
         let keys = Object.keys(obj)
-        for(let key of keys) {
+        for (let key of keys) {
             defineReactive(obj, key)
         }
     }
@@ -62,7 +86,7 @@ function defineReactive(obj: object, key: string) {
             }
             return val
         },
-        set(newVal){
+        set(newVal) {
             if (newVal === val) {
                 return
             }

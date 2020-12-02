@@ -3,6 +3,9 @@ export interface IComponent {
     $options: any;
     _self: IComponent;
     _data: Object;
+    $mount: (el: string) => Element;
+    _update: (vnode: IVNode) => void;
+    _render: () => IVNode;
 }
 
 export interface IWatcher {
@@ -20,3 +23,5 @@ export interface IDep {
     depend: () => void;
     notify: () => void;
 }
+
+export interface IVNode { }
