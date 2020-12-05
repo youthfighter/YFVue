@@ -1,14 +1,18 @@
-import { IWatcher, IComponent, IDep } from "./interface/index.d";
-import Dep from "./dep";
+import { IWatcher, IComponent, IDep } from "./interface/index.d"
+import Dep from "./dep"
 
 export default class Watcher implements IWatcher {
-    vm: IComponent;
-    getter: Function;
+    vm: IComponent
+    getter: Function
     value: any
-    constructor(vm: IComponent, expOrFn: string | Function) {
-        this.vm = vm;
+    cb: Function
+    newDepIds: Array<number> = []
+
+    constructor(vm: IComponent, expOrFn: string | Function, cb: Function) {
+        this.vm = vm
         this.getter = typeof expOrFn === 'function' ? expOrFn : parsePath(expOrFn)
         this.value = this.get()
+        this.cb = cb
     }
 
     get() {
@@ -19,11 +23,25 @@ export default class Watcher implements IWatcher {
     }
 
     addDep(dep: IDep) {
-        dep.addSub(this)
+        if (this.newDepIds.indexOf(dep.id) === -1) {
+            this.newDepIds.push(dep.id)
+            dep.addSub(this)
+        }
+
     }
 
     update() {
         console.log('update')
+        this.run()
+    }
+
+    run() {
+        const value = this.get()
+        if (value !== this.value) {
+            const oldValue = this.value
+            this.value = value
+            this.cb.call(this.vm, value, oldValue)
+        }
     }
 }
 

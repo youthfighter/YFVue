@@ -1,10 +1,15 @@
 import { IWatcher, IDep } from './interface/index.d'
+
+let uid = 0
+
 export default class Dep implements IDep{
-    static target: IWatcher;
-    subs: Array<IWatcher>;
+    static target: IWatcher
+    subs: Array<IWatcher>
+    id: number
 
     constructor() {
         this.subs = []
+        this.id = uid++
     }
 
     addSub(sub: IWatcher) {

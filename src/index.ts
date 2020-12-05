@@ -1,3 +1,4 @@
+import { VNode } from './vnode';
 import { IComponent, IVNode } from './interface/index';
 import Dep from './dep';
 import Watcher from './watcher';
@@ -13,23 +14,59 @@ export default function YFVue(options: any = {}) {
 }
 
 YFVue.prototype.$mount = function (el: string) {
-    return mountComponent(this, document.querySelector(el))
+    mountComponent(this, document.querySelector(el))
 }
 
-YFVue.prototype._render = function (vnode: IVNode) {
+YFVue.prototype._render = function (): IVNode {
     const vm: IComponent = this
     const { render } = vm.$options
-    render.call(vm)
+    return render.call(vm, createElement)
+}
+
+
+
+YFVue.prototype._update = function (vnode: IVNode) {
+    let vm: IComponent = this
+    const preEl = vm._vnode
+    vm._vnode = vnode
+    vm.__patch__(preEl, vnode)
+}
+
+YFVue.prototype.__patch__ = function (oldVnode: IVNode, newVNode: IVNode) {
+    const vm = this
+    if (!oldVnode) {
+        createElm(newVNode, vm.$el)
+    } else {
+        vm.$el.innerText = newVNode.text
+    }
+    console.log(vm, 'haha')
+}
+
+
+function createElm(vnode: IVNode, parentElm?: Element) {
+    const { tag, text } = vnode
+    let elm
+    if (tag) {
+        elm = document.createElement(vnode.tag)
+    } else {
+        elm = document.createTextNode(text)
+    }
+    console.log('createElm', elm)
+    vnode.elm = elm
+    parentElm.appendChild(elm)
 }
 
 function mountComponent(vm: IComponent, el: Element) {
-    new Watcher(vm, ()=>{
+    vm.$el = el
+    new Watcher(vm, () => {
         vm._update(vm._render())
+    }, () => {
+        console.log('cb')
     })
 }
 
-function createElement(tag: string, data: any, children: any) {
-    
+function createElement(tag: string, data: any, children: any, text: string) {
+    return new VNode(tag, data, children, text)
 }
 
 function initState(vm: IComponent) {
@@ -56,7 +93,6 @@ function proxy(vm: IComponent, sourceKey: string, key: string) {
 }
 
 function observe(value) {
-
     let ob = new Observer(value)
 }
 
