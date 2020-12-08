@@ -4,16 +4,19 @@ let vm = new YFVue({
     el: '#app',
     data() {
         return {
-            abc: '123'
+            abc: '123',
+            haha: {
+                date: null
+            }
         }
     },
     render(h) {
-        return h(undefined, undefined, undefined, this.abc)
+        return h(undefined, undefined, undefined, this.haha.date)
     }
 })
 
 document.addEventListener('click', () => {
-    vm.abc = new Date().toString()
+    vm.haha.date = new Date().toString()
 })
 
 console.log(vm)

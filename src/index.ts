@@ -1,5 +1,5 @@
 import { VNode } from './vnode';
-import { IComponent, IVNode } from './interface/index';
+import { IComponent, IVNode, IDep } from './interface/index';
 import Dep from './dep';
 import Watcher from './watcher';
 export default function YFVue(options: any = {}) {
@@ -92,14 +92,18 @@ function proxy(vm: IComponent, sourceKey: string, key: string) {
     })
 }
 
-function observe(value) {
-    let ob = new Observer(value)
+function observe(obj) {
+    if (obj === null || typeof obj !== 'object') {
+        return
+    }
+    let ob = new Observer(obj)
+    return ob
 }
 
 class Observer {
     value: any
     constructor(value) {
-        this.value = value;
+        this.value = value
         this.walk(value)
     }
     walk(obj: Object) {
@@ -113,6 +117,7 @@ class Observer {
 function defineReactive(obj: object, key: string) {
     const dep = new Dep()
     let val = obj[key]
+    const childOb = observe(val)
     Object.defineProperty(obj, key, {
         enumerable: true,
         configurable: true,
